@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>WorkDay Enterprise — All Tasks Combined</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+/* ============================================
+   RESET & ROOT
+============================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080c14;
+  --sidebar:#0d1220;
+  --card:#111827;
+  --card2:#151e2e;
+  --border:#1e2d45;
+  --border2:#253350;
+  --accent:#4f8ef7;
+  --accent2:#7c5cfc;
+  --green:#10b981;
+  --orange:#f59e0b;
+  --red:#ef4444;
+  --pink:#ec4899;
+  --text:#f1f5f9;
+  --muted:#64748b;
+  --muted2:#475569;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+
+/* ============================================
+   SIDEBAR
+============================================ */
+.sidebar{width:220px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.logo{padding:18px 16px 16px;border-bottom:1px solid var(--border)}
+.logo h2{font-size:16px;font-weight:800;letter-spacing:.5px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo p{color:var(--muted);font-size:10px;margin-top:3px}
+
+.task-section{padding:10px 12px 4px}
+.task-label{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted2);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.task-dot{width:6px;height:6px;border-radius:50%}
+.dot-blue{background:var(--accent)}.dot-purple{background:var(--accent2)}.dot-green{background:var(--green)}
+
+.nav-item{padding:8px 12px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin:1px 0;border-radius:0 6px 6px 0;margin-right:8px}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.nav-item.active{background:rgba(79,142,247,.1);border-left-color:var(--accent);color:var(--text)}
+.nav-item.active-purple{background:rgba(124,92,252,.1);border-left-color:var(--accent2);color:var(--text)}
+.nav-item.active-green{background:rgba(16,185,129,.1);border-left-color:var(--green);color:var(--text)}
+.nav-item.active-pink{background:rgba(244,114,182,.1);border-left-color:#f472b6;color:var(--text)}
+.nav-item.active-violet{background:rgba(167,139,250,.1);border-left-color:#a78bfa;color:var(--text)}
+.nav-icon{font-size:14px;width:16px;text-align:center}
+
+/* ============================================
+   MAIN CONTENT
+============================================ */
+.main{flex:1;overflow-y:auto;background:var(--bg)}
+.page{display:none;padding:22px;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ============================================
+   PAGE HEADERS
+============================================ */
+.page-header{margin-bottom:20px}
+.page-header h1{font-size:20px;font-weight:700;margin-bottom:3px}
+.page-header p{color:var(--muted);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tag{padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag-blue{background:rgba(79,142,247,.15);color:var(--accent)}
+.tag-purple{background:rgba(124,92,252,.15);color:var(--accent2)}
+.tag-green{background:rgba(16,185,129,.15);color:var(--green)}
+.tag-orange{background:rgba(245,158,11,.15);color:var(--orange)}
+.tag-pink{background:rgba(244,114,182,.15);color:#f472b6}
+.tag-violet{background:rgba(167,139,250,.15);color:#a78bfa}
+
+/* ============================================
+   HERO BANNER (Dashboard)
+============================================ */
+.hero{position:relative;border-radius:14px;padding:24px 26px;margin-bottom:20px;overflow:hidden;background:linear-gradient(135deg,#1b2647 0%,#0f1a33 55%,#1a1230 100%);border:1px solid var(--border2)}
+.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(79,142,247,.35),transparent 70%)}
+.hero::after{content:'';position:absolute;bottom:-80px;left:30%;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,252,.25),transparent 70%)}
+.hero-top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px}
+.hero-greet{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.hero h1{font-size:24px;font-weight:800;margin-bottom:6px}
+.hero p.sub{color:var(--muted);font-size:12px;max-width:520px;line-height:1.6}
+.hero-clock{text-align:right;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:10px;padding:10px 18px;backdrop-filter:blur(4px)}
+.hero-clock .time{font-size:20px;font-weight:800;letter-spacing:1px;font-family:'Courier New',monospace}
+.hero-clock .date{font-size:10px;color:var(--muted);margin-top:2px}
+.hero-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;position:relative;z-index:1}
+.hero-pill{padding:5px 12px;border-radius:20px;font-size:10.5px;font-weight:600;background:rgba(255,255,255,.06);border:1px solid var(--border2);display:flex;align-items:center;gap:6px}
+.hero-actions{display:flex;gap:10px;margin-top:16px;position:relative;z-index:1}
+.hero-btn{padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.hero-btn:hover{transform:translateY(-1px)}
+.hero-btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.hero-btn.ghost{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border2)}
+
+/* ============================================
+   ENHANCED STAT CARDS (Dashboard)
+============================================ */
+.stat2{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:14px;transition:transform .15s,border-color .15s}
+.stat2:hover{transform:translateY(-2px);border-color:var(--border2)}
+.stat2 .icon-box{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.stat2 .s-label{font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.stat2 .s-val{font-size:22px;font-weight:800;line-height:1}
+.stat2 .s-trend{font-size:10px;margin-top:4px;font-weight:600}
+.ib-blue{background:rgba(79,142,247,.15);color:var(--accent)}
+.ib-purple{background:rgba(124,92,252,.15);color:var(--accent2)}
+.ib-green{background:rgba(16,185,129,.15);color:var(--green)}
+.ib-orange{background:rgba(245,158,11,.15);color:var(--orange)}
+.ib-pink{background:rgba(244,114,182,.15);color:var(--pink)}
+.ib-red{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* ============================================
+   TASK PROGRESS CARDS (Dashboard)
+============================================ */
+.tcard{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;transition:border-color .15s}
+.tcard:hover{border-color:var(--border2)}
+.tcard-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.tcard-top h3{font-size:11.5px;font-weight:700}
+.tcard-bar{height:5px;border-radius:4px;background:var(--bg);overflow:hidden;margin:8px 0 10px}
+.tcard-bar-fill{height:100%;border-radius:4px}
+
+/* ============================================
+   AUTH PAGE (Signup/Login)
+============================================ */
+.auth-shell{display:grid;grid-template-columns:1fr 1.1fr;gap:0;border-radius:16px;overflow:hidden;border:1px solid var(--border2);margin-bottom:20px;min-height:480px}
+.auth-side{background:linear-gradient(150deg,#1b2647 0%,#141b33 50%,#231a3d 100%);padding:40px 36px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.auth-side::before{content:'';position:absolute;top:-80px;right:-80px;width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,rgba(79,142,247,.35),transparent 70%)}
+.auth-side::after{content:'';position:absolute;bottom:-100px;left:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,252,.3),transparent 70%)}
+.auth-logo{position:relative;z-index:1;font-size:18px;font-weight:800;background:linear-gradient(135deg,#fff,#a3c0ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px}
+.auth-illustration{position:relative;z-index:1;font-size:64px;text-align:center;margin:20px 0}
+.auth-side h2{position:relative;z-index:1;font-size:22px;font-weight:800;margin-bottom:8px;line-height:1.3}
+.auth-side p{position:relative;z-index:1;color:#a9b6d6;font-size:12.5px;line-height:1.7;max-width:320px}
+.auth-feat{position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.auth-feat div{display:flex;align-items:center;gap:10px;font-size:12px;color:#cdd7f0}
+.auth-feat .dot{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.auth-main{background:var(--card);padding:36px 40px;display:flex;flex-direction:column;justify-content:center}
+.auth-tabs{display:flex;gap:6px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:24px}
+.auth-tab{flex:1;text-align:center;padding:9px;border-radius:8px;font-size:12.5px;font-weight:700;cursor:pointer;color:var(--muted);transition:all .15s;user-select:none}
+.auth-tab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.auth-main h2{font-size:20px;font-weight:800;margin-bottom:4px}
+.auth-main .sub{color:var(--muted);font-size:12px;margin-bottom:22px}
+.auth-input-group{position:relative;margin-bottom:14px}
+.auth-input-group label{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.3px}
+.auth-input-group .ic{position:absolute;left:12px;top:36px;font-size:13px;opacity:.6}
+.auth-input-group input{padding:11px 14px 11px 36px;border-radius:9px;font-size:13px;background:var(--bg)}
+.auth-input-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,142,247,.12)}
+.auth-submit{width:100%;padding:12px;border-radius:9px;border:none;cursor:pointer;font-size:13px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-top:6px;transition:opacity .15s,transform .15s}
+.auth-submit:hover{opacity:.9;transform:translateY(-1px)}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:18px 0;color:var(--muted);font-size:11px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.auth-social{display:flex;gap:10px}
+.auth-social button{flex:1;padding:9px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .15s}
+.auth-social button:hover{border-color:var(--border2)}
+.auth-result{margin-top:14px;font-size:12px;padding:10px 12px;border-radius:8px;display:none}
+.auth-result.show{display:block}
+.auth-result.ok{background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.25)}
+.auth-result.err{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.auth-switch{text-align:center;font-size:12px;color:var(--muted);margin-top:18px}
+.auth-switch a{color:var(--accent);font-weight:600;cursor:pointer}
+@media (max-width:900px){.auth-shell{grid-template-columns:1fr}.auth-side{display:none}}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px}
+.stat.blue::after{background:var(--accent)}.stat.purple::after{background:var(--accent2)}
+.stat.green::after{background:var(--green)}.stat.orange::after{background:var(--orange)}
+.stat.pink::after{background:var(--pink)}
+.stat.red::after{background:var(--red)}
+.stat .s-label{font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500}
+.stat .s-val{font-size:22px;font-weight:800}
+.stat.blue .s-val{color:var(--accent)}.stat.purple .s-val{color:var(--accent2)}
+.stat.green .s-val{color:var(--green)}.stat.orange .s-val{color:var(--orange)}
+.stat.pink .s-val{color:var(--pink)}
+.stat.red .s-val{color:var(--red)}
+
+/* ============================================
+   CARDS & TABLES
+============================================ */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.card-header h3{font-size:13px;font-weight:600}
+.card-body{padding:16px}
+table{width:100%;border-collapse:collapse}
+th{padding:9px 12px;text-align:left;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.5px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+td{padding:9px 12px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* ============================================
+   BADGES
+============================================ */
+.badge{padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;display:inline-block}
+.b-green{background:rgba(16,185,129,.15);color:var(--green)}
+.b-blue{background:rgba(79,142,247,.15);color:var(--accent)}
+.b-orange{background:rgba(245,158,11,.15);color:var(--orange)}
+.b-red{background:rgba(239,68,68,.15);color:var(--red)}
+.b-purple{background:rgba(124,92,252,.15);color:var(--accent2)}
+.b-muted{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* ============================================
+   FORMS
+============================================ */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group label{font-size:11px;color:var(--muted);font-weight:500}
+.form-group.full{grid-column:1/-1}
+input,select,textarea{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-size:12px;outline:none;transition:border-color .15s;width:100%;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{resize:vertical;height:70px}
+
+/* ============================================
+   BUTTONS
+============================================ */
+.btn{padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;font-family:inherit}
+.btn:hover{opacity:.85;transform:translateY(-1px)}
+.btn-blue{background:var(--accent);color:white}
+.btn-green{background:var(--green);color:white}
+.btn-red{background:var(--red);color:white}
+.btn-purple{background:var(--accent2);color:white}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-row{display:flex;gap:8px;margin-top:14px}
+
+/* ============================================
+   GRID LAYOUTS
+============================================ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+
+/* ============================================
+   SKILL CHIPS
+============================================ */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:3px 10px;background:var(--bg);border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;transition:all .15s;color:var(--muted)}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip.on{background:rgba(79,142,247,.15);border-color:var(--accent);color:var(--accent)}
+
+/* ============================================
+   SEARCH
+============================================ */
+.search-wrap{position:relative;margin-bottom:12px}
+.search-wrap input{padding-left:32px}
+.s-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px}
+
+/* ============================================
+   UPLOAD AREA
+============================================ */
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;margin-top:6px}
+.upload-zone:hover{border-color:var(--accent)}
+.upload-zone .uz-icon{font-size:28px;margin-bottom:6px}
+.upload-zone p{color:var(--muted);font-size:12px}
+.upload-preview{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.prev-img{width:70px;height:70px;object-fit:cover;border-radius:7px;border:1px solid var(--border)}
+.prev-file{width:70px;height:70px;background:var(--card2);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:20px}
+
+/* ============================================
+   CODE BLOCK
+============================================ */
+.code{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:12px;font-family:'Courier New',monospace;font-size:11px;color:#7dd3fc;line-height:1.7;overflow-x:auto;margin-bottom:10px}
+
+/* ============================================
+   MODULE CHECKLIST
+============================================ */
+.mod-list{display:flex;flex-direction:column;gap:6px}
+.mod-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:7px;font-size:12px}
+.mod-done{background:rgba(16,185,129,.12);color:var(--green);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+
+/* ============================================
+   HEALTH ITEMS
+============================================ */
+.health-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.h-item{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.h-icon{font-size:22px;margin-bottom:5px}
+.h-lbl{font-size:10px;color:var(--muted)}
+.h-val{font-size:13px;font-weight:700;margin-top:3px}
+
+/* ============================================
+   AUDIT ITEM
+============================================ */
+.audit-item{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.audit-left .a-table{font-size:13px;font-weight:600}
+.audit-left .a-detail{font-size:11px;color:var(--muted);margin-top:3px}
+.audit-right{text-align:right}
+.a-time{font-size:10px;color:var(--muted);margin-top:5px}
+
+/* ============================================
+   NOTIFICATION ITEM
+============================================ */
+.notif-item{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:13px 15px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start}
+.notif-item.unread{border-left:3px solid var(--accent)}
+.n-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.n-msg{font-size:12px;color:var(--muted)}
+.n-time{font-size:10px;color:var(--muted);white-space:nowrap;margin-left:12px}
+
+/* ============================================
+   TABS
+============================================ */
+.tabs{display:flex;gap:2px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:14px;width:fit-content}
+.tab{padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--muted);transition:all .15s;font-weight:500}
+.tab.on{background:var(--accent);color:white}
+
+/* ============================================
+   TOAST
+============================================ */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--card);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:9px;padding:11px 16px;font-size:12px;z-index:9999;transform:translateX(220px);opacity:0;transition:all .25s;max-width:260px}
+.toast.show{transform:translateX(0);opacity:1}
+
+/* ============================================
+   SCROLLBAR
+============================================ */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     SIDEBAR
+============================================ -->
+<div class="sidebar">
+  <div class="logo">
+    <h2>⚡ WorkDay Enterprise</h2>
+    <p>All Tasks Combined — Final Demo</p>
+  </div>
+
+  <!-- TASK 1 -->
+  <div class="task-section">
+    <div class="task-label"><span class="task-dot" style="background:#f472b6"></span>TASK 1 — Login &amp; Signup</div>
+  </div>
+  <div class="nav-item" id="nav-auth" onclick="go('auth',this,'pink')"><span class="nav-icon">🔐</span>Auth System</div>
+  <div class="nav-item" id="nav-stack" onclick="go('stack',this,'pink')"><span class="nav-icon">🧱</span>Tech Stack</div>
+
+  <!-- TASK 2 -->
+  <div class="task-section">
+    <div class="task-label"><span class="task-dot" style="background:#a78bfa"></span>TASK 2 — GitHub Workflow</div>
+  </div>
+  <div class="nav-item" id="nav-github" onclick="go('github',this,'violet')"><span class="nav-icon">🐙</span>Git Guide</div>
+  <div class="nav-item" id="nav-gitflow" onclick="go('gitflow',this,'violet')"><span class="nav-icon">🌿</span>Branch Strategy</div>
+
+  <!-- DAY 3 -->
+  <div class="task-section">
+    <div class="task-label"><span class="task-dot dot-blue"></span>TASK 4 — Employee Profile Management</div>
+  </div>
+  <div class="nav-item active" id="nav-home" onclick="go('home',this,'blue')"><span class="nav-icon">🏠</span>Overview</div>
+  <div class="nav-item" id="nav-employees" onclick="go('employees',this,'blue')"><span class="nav-icon">👥</span>Employee List</div>
+  <div class="nav-item" id="nav-create" onclick="go('create',this,'blue')"><span class="nav-icon">➕</span>Add Employee</div>
+  <div class="nav-item" id="nav-upload" onclick="go('upload',this,'blue')"><span class="nav-icon">📁</span>Image Upload</div>
+  <div class="nav-item" id="nav-depts" onclick="go('depts',this,'blue')"><span class="nav-icon">🏢</span>Departments</div>
+  <div class="nav-item" id="nav-skills-page" onclick="go('skills-page',this,'blue')"><span class="nav-icon">🎯</span>Skills</div>
+  <div class="nav-item" id="nav-attendance" onclick="go('attendance',this,'blue')"><span class="nav-icon">🗓️</span>Attendance</div>
+
+  <!-- DAY 5 -->
+  <div class="task-section">
+    <div class="task-label"><span class="task-dot dot-purple"></span>TASK 5 — Enterprise Workflow Engine</div>
+  </div>
+  <div class="nav-item" id="nav-assets" onclick="go('assets',this,'purple')"><span class="nav-icon">💼</span>Assets</div>
+  <div class="nav-item" id="nav-assign" onclick="go('assign',this,'purple')"><span class="nav-icon">🔗</span>Assign / Return</div>
+  <div class="nav-item" id="nav-notifs" onclick="go('notifs',this,'purple')"><span class="nav-icon">🔔</span>Notifications</div>
+  <div class="nav-item" id="nav-audit" onclick="go('audit',this,'purple')"><span class="nav-icon">📋</span>Audit Trail</div>
+
+  <!-- TASK 6 -->
+  <div class="task-section">
+    <div class="task-label"><span class="task-dot dot-green"></span>TASK 6 — Production Ready Software</div>
+  </div>
+  <div class="nav-item" id="nav-health" onclick="go('health',this,'green')"><span class="nav-icon">💚</span>Health Check</div>
+  <div class="nav-item" id="nav-arch" onclick="go('arch',this,'green')"><span class="nav-icon">🏗️</span>Architecture</div>
+  <div class="nav-item" id="nav-tests" onclick="go('tests',this,'green')"><span class="nav-icon">🧪</span>Unit Tests</div>
+  <div class="nav-item" id="nav-docker" onclick="go('docker',this,'green')"><span class="nav-icon">🐳</span>Docker / CI-CD</div>
+</div>
+
+<!-- ============================================
+     MAIN PAGES
+============================================ -->
+<div class="main">
+
+<!-- ===== TASK 1 — AUTH SYSTEM ===== -->
+<div class="page" id="page-auth">
+  <div class="page-header">
+    <h1>Authentication System</h1>
+    <p>Task 1 — React + Node.js + PostgreSQL <span class="tag tag-pink">JWT</span><span class="tag tag-pink">bcrypt</span><span class="tag tag-pink">Full Stack</span></p>
+  </div>
+
+  <div class="g3" style="margin-bottom:16px">
+    <div class="stat" style="border-color:#f472b680"><div class="s-label">Architecture Layers</div><div class="s-val" style="color:#f472b6">3</div></div>
+    <div class="stat" style="border-color:#f472b680"><div class="s-label">Packages Installed</div><div class="s-val" style="color:#f472b6">7</div></div>
+    <div class="stat" style="border-color:#f472b680"><div class="s-label">API Endpoints</div><div class="s-val" style="color:#f472b6">2</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>🏗️ Architecture</h3></div>
+      <div class="card-body">
+        <div class="code">Frontend (React)
+        │
+        ▼
+Backend API (Node.js + Express)
+        │
+        ▼
+PostgreSQL Database</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+          <div class="mod-item">React Frontend (useState, Axios)<span class="mod-done">✅</span></div>
+          <div class="mod-item">Node.js + Express REST API<span class="mod-done">✅</span></div>
+          <div class="mod-item">PostgreSQL Database<span class="mod-done">✅</span></div>
+          <div class="mod-item">bcrypt Password Encryption<span class="mod-done">✅</span></div>
+          <div class="mod-item">JWT Authentication Token<span class="mod-done">✅</span></div>
+          <div class="mod-item">CORS Enabled<span class="mod-done">✅</span></div>
+          <div class="mod-item">dotenv Environment Variables<span class="mod-done">✅</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📦 Backend Setup</h3></div>
+      <div class="card-body">
+        <div class="code">npm install express pg cors bcrypt jsonwebtoken dotenv
+npm install nodemon --save-dev</div>
+        <div class="code" style="margin-top:8px">backend/
+├── config/
+│   └── db.js
+├── routes/
+│   └── auth.js
+├── .env
+└── server.js</div>
+        <div class="code" style="margin-top:8px"># .env
+PORT=5000
+DB_USER=postgres
+DB_HOST=localhost
+DB_NAME=loginapp
+DB_PASSWORD=yourpassword
+JWT_SECRET=mysecretkey</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>🔒 Signup API</h3><span class="badge b-green">POST /api/auth/signup</span></div>
+      <div class="card-body">
+        <div class="code">// Check if email exists
+const userExist = await pool.query(
+  "SELECT * FROM users WHERE email=$1", [email]
+);
+
+// Hash password
+const salt = await bcrypt.genSalt(10);
+const hashedPassword = await bcrypt.hash(password, salt);
+
+// Insert user
+INSERT INTO users(name,email,password)
+VALUES($1,$2,$3) RETURNING *</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🔑 Login API</h3><span class="badge b-blue">POST /api/auth/login</span></div>
+      <div class="card-body">
+        <div class="code">// Verify user exists
+const user = await pool.query(
+  "SELECT * FROM users WHERE email=$1", [email]
+);
+
+// Compare password
+const match = await bcrypt.compare(password, user.password);
+
+// Sign JWT token
+const token = jwt.sign(
+  { id: user.id },
+  process.env.JWT_SECRET,
+  { expiresIn: "1d" }
+);
+
+// Response
+{ "message": "Login Success", "token": "JWT_TOKEN" }</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>🗄️ Database Schema</h3></div>
+    <div class="card-body">
+      <div class="code">CREATE DATABASE loginapp;
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    email VARCHAR(100) UNIQUE,
+    password VARCHAR(255)
+);</div>
+    </div>
+  </div>
+
+  <!-- Interactive Live Demo -->
+  <div class="page-header" style="margin-bottom:14px">
+    <h1 style="font-size:15px">🎮 Live Demo — Try the Auth Flow</h1>
+    <p>Fully working signup &amp; login simulation (data stored in-memory like PostgreSQL)</p>
+  </div>
+
+  <div class="auth-shell">
+    <!-- Left branding panel -->
+    <div class="auth-side">
+      <div>
+        <div class="auth-logo">⬡ WorkDay</div>
+        <div class="auth-illustration">🔐</div>
+        <h2>Secure access, built the right way.</h2>
+        <p>Every account is protected with bcrypt password hashing and signed JWT tokens — the same pattern used in production-grade Node.js APIs.</p>
+      </div>
+      <div class="auth-feat">
+        <div><span class="dot">🔑</span> JWT-based session tokens</div>
+        <div><span class="dot">🧂</span> bcrypt salted password hashing</div>
+        <div><span class="dot">🛡️</span> PostgreSQL unique-email constraint</div>
+        <div><span class="dot">⚡</span> Instant in-browser demo, no setup</div>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="auth-main">
+      <div class="auth-tabs">
+        <div class="auth-tab on" id="tab-signup" onclick="switchAuthTab('signup')">Sign Up</div>
+        <div class="auth-tab" id="tab-login" onclick="switchAuthTab('login')">Log In</div>
+      </div>
+
+      <!-- Sign Up Form -->
+      <div id="form-signup">
+        <h2>Create your account</h2>
+        <div class="sub">Join WorkDay and manage your workspace in seconds.</div>
+
+        <div class="auth-input-group">
+          <label>Full Name</label>
+          <span class="ic">👤</span>
+          <input id="reg-name" placeholder="Rahul Sharma"/>
+        </div>
+        <div class="auth-input-group">
+          <label>Email Address</label>
+          <span class="ic">✉️</span>
+          <input id="reg-email" type="email" placeholder="rahul@gmail.com"/>
+        </div>
+        <div class="auth-input-group">
+          <label>Password</label>
+          <span class="ic">🔒</span>
+          <input id="reg-pass" type="password" placeholder="Minimum 6 characters"/>
+        </div>
+        <button class="auth-submit" onclick="demoRegister()">Create Account →</button>
+        <div id="reg-result" class="auth-result"></div>
+
+        <div class="auth-divider">or continue with</div>
+        <div class="auth-social">
+          <button onclick="toast('🔧 Demo only — connect real OAuth in production')">🔵 Google</button>
+          <button onclick="toast('🔧 Demo only — connect real OAuth in production')">⬛ GitHub</button>
+        </div>
+        <div class="auth-switch">Already have an account? <a onclick="switchAuthTab('login')">Log in</a></div>
+      </div>
+
+      <!-- Login Form -->
+      <div id="form-login" style="display:none">
+        <h2>Welcome back 👋</h2>
+        <div class="sub">Log in to access your WorkDay dashboard.</div>
+
+        <div class="auth-input-group">
+          <label>Email Address</label>
+          <span class="ic">✉️</span>
+          <input id="log-email" placeholder="rahul@gmail.com"/>
+        </div>
+        <div class="auth-input-group">
+          <label>Password</label>
+          <span class="ic">🔒</span>
+          <input id="log-pass" type="password" placeholder="••••••••"/>
+        </div>
+        <button class="auth-submit" onclick="demoLogin()">Log In →</button>
+        <div id="log-result" class="auth-result"></div>
+
+        <div class="auth-divider">or continue with</div>
+        <div class="auth-social">
+          <button onclick="toast('🔧 Demo only — connect real OAuth in production')">🔵 Google</button>
+          <button onclick="toast('🔧 Demo only — connect real OAuth in production')">⬛ GitHub</button>
+        </div>
+        <div class="auth-switch">Don't have an account? <a onclick="switchAuthTab('signup')">Sign up</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TASK 1 — TECH STACK ===== -->
+<div class="page" id="page-stack">
+  <div class="page-header">
+    <h1>Technology Stack</h1>
+    <p>Task 1 — What Students Learned <span class="tag tag-pink">11 Concepts</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Complete Learning Summary</h3></div>
+    <table>
+      <thead><tr><th>Concept</th><th>Description</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><strong>React</strong></td><td>Frontend UI Framework</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>Components</strong></td><td>Reusable UI building blocks</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>useState</strong></td><td>Store and manage form data</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>Axios</strong></td><td>HTTP API calls from frontend</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>Node.js</strong></td><td>Backend JavaScript runtime</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>Express</strong></td><td>REST API framework</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>PostgreSQL</strong></td><td>Relational database</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>bcrypt</strong></td><td>Secure password hashing</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>JWT</strong></td><td>Stateless authentication token</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>CORS</strong></td><td>Frontend ↔ Backend communication</td><td><span class="badge b-green">✅ Done</span></td></tr>
+        <tr><td><strong>dotenv</strong></td><td>Secure environment variables</td><td><span class="badge b-green">✅ Done</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Frontend Structure</h3></div>
+      <div class="card-body">
+        <div class="code">frontend/src/
+├── pages/
+│   ├── Login.js
+│   └── Signup.js
+├── App.js
+└── index.js
+
+# Start frontend
+npm start → http://localhost:3000</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Next Level Improvements</h3></div>
+      <div class="card-body">
+        <div class="mod-list">
+          <div class="mod-item">React Router + Protected Routes<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">User Dashboard<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">Forgot Password + Email Verification<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">Refresh Tokens<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">Role Based Access (Admin/User)<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">Prisma ORM + Redux Toolkit<span class="badge b-blue">Planned</span></div>
+          <div class="mod-item">Deploy: Vercel + Render<span class="badge b-blue">Planned</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TASK 2 — GITHUB GUIDE ===== -->
+<div class="page" id="page-github">
+  <div class="page-header">
+    <h1>GitHub Complete Guide</h1>
+    <p>Task 2 — Version Control &amp; Collaboration <span class="tag tag-violet">Git</span><span class="tag tag-violet">GitHub</span></p>
+  </div>
+
+  <div class="g3" style="margin-bottom:16px">
+    <div class="stat" style="border-color:#a78bfa80"><div class="s-label">Core Git Commands</div><div class="s-val" style="color:#a78bfa">14</div></div>
+    <div class="stat" style="border-color:#a78bfa80"><div class="s-label">Why GitHub</div><div class="s-val" style="color:#a78bfa">6</div></div>
+    <div class="stat" style="border-color:#a78bfa80"><div class="s-label">Daily Steps</div><div class="s-val" style="color:#a78bfa">7</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Why GitHub?</h3></div>
+      <div class="card-body">
+        <div class="mod-list">
+          <div class="mod-item">✅ Code Backup<span class="mod-done">Essential</span></div>
+          <div class="mod-item">✅ Team Collaboration<span class="mod-done">Essential</span></div>
+          <div class="mod-item">✅ Version Control<span class="mod-done">Essential</span></div>
+          <div class="mod-item">✅ Project Management<span class="mod-done">Essential</span></div>
+          <div class="mod-item">✅ Portfolio Building<span class="mod-done">Essential</span></div>
+          <div class="mod-item">✅ Deployment Integration<span class="mod-done">Essential</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Setup Git (One Time)</h3></div>
+      <div class="card-body">
+        <div class="code">git config --global user.name "Your Name"
+git config --global user.email "your@email.com"
+
+# Verify
+git config --list</div>
+        <div class="code" style="margin-top:8px"># Project Setup — If project already exists:
+git init
+git add .
+git commit -m "Initial Commit"
+git branch -M main
+git remote add origin https://github.com/username/project.git
+git push -u origin main</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Git Workflow — Understanding the Stages</h3></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px">
+        <div style="text-align:center;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+          <div style="font-size:22px;margin-bottom:6px">📝</div>
+          <div style="font-size:11px;font-weight:700;color:#a78bfa">Working Directory</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Files you are editing / code changes</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+          <div style="font-size:22px;margin-bottom:6px">📋</div>
+          <div style="font-size:11px;font-weight:700;color:var(--orange)">Staging Area</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Files ready for commit</div>
+          <div class="code" style="margin-top:6px;font-size:10px">git add .</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+          <div style="font-size:22px;margin-bottom:6px">💾</div>
+          <div style="font-size:11px;font-weight:700;color:var(--green)">Commit</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Snapshot of your code</div>
+          <div class="code" style="margin-top:6px;font-size:10px">git commit -m "msg"</div>
+        </div>
+        <div style="text-align:center;padding:14px;background:var(--bg);border:1px solid var(--border);border-radius:8px">
+          <div style="font-size:22px;margin-bottom:6px">☁️</div>
+          <div style="font-size:11px;font-weight:700;color:var(--accent)">Push to GitHub</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">Upload to remote</div>
+          <div class="code" style="margin-top:6px;font-size:10px">git push</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Commands Cheat Sheet</h3></div>
+      <div class="card-body">
+        <div class="code">git status              # Check file changes
+git add .               # Stage all files
+git commit -m "msg"     # Create snapshot
+git push                # Upload to GitHub
+git pull                # Download latest
+git branch              # List branches
+git checkout -b feat    # Create branch
+git switch branch-name  # Switch branch
+git merge branch-name   # Merge branch
+git branch -d branch    # Delete branch
+git log --oneline       # View history
+git restore filename    # Discard change
+git reset filename      # Unstage file
+git clone repo-url      # Clone repository</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Commit Message Standards</h3></div>
+      <div class="card-body">
+        <div style="margin-bottom:8px;font-size:12px;color:var(--green);font-weight:600">✅ Good Commit Messages</div>
+        <div class="code" style="color:#10b981">git commit -m "Added employee image upload"
+git commit -m "Implemented JWT middleware"
+git commit -m "Created dashboard statistics"
+git commit -m "Fixed salary validation bug"</div>
+        <div style="margin:10px 0 6px;font-size:12px;color:var(--red);font-weight:600">❌ Bad Commit Messages</div>
+        <div class="code" style="color:#ef4444">git commit -m "Done"
+git commit -m "Update"
+git commit -m "Final"
+git commit -m "Fix"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Internship Rules — Daily Submission Process</h3></div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">🌅</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Morning</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">git pull origin main</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">🌿</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Create Branch</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">checkout -b feature/task</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">💻</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Code</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">Complete task</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">⏱️</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Commit Often</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">Every 1–2 hours</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">📤</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Push</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">git push origin branch</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">🔁</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Pull Request</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">feature → main</div></div>
+        <div style="text-align:center;padding:10px 6px;background:var(--bg);border:1px solid var(--border);border-radius:8px"><div style="font-size:16px">✅</div><div style="font-size:9px;color:var(--muted);margin-top:4px">Never on Main</div><div style="font-size:9px;color:#a78bfa;margin-top:2px">Always use branches</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TASK 2 — BRANCH STRATEGY ===== -->
+<div class="page" id="page-gitflow">
+  <div class="page-header">
+    <h1>Branch Strategy</h1>
+    <p>Task 2 — Industry Git Workflow <span class="tag tag-violet">Feature Branches</span><span class="tag tag-violet">Pull Requests</span></p>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Branch Naming Standards</h3></div>
+      <div class="card-body">
+        <table>
+          <thead><tr><th>Type</th><th>Branch Name</th></tr></thead>
+          <tbody>
+            <tr><td>Feature</td><td><span class="badge b-blue">feature/login</span></td></tr>
+            <tr><td>Feature</td><td><span class="badge b-blue">feature/dashboard</span></td></tr>
+            <tr><td>Feature</td><td><span class="badge b-blue">feature/employee-management</span></td></tr>
+            <tr><td>Bug Fix</td><td><span class="badge b-red">bugfix/dashboard-error</span></td></tr>
+            <tr><td>Hotfix</td><td><span class="badge b-orange">hotfix/login-crash</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Pull Request Workflow</h3></div>
+      <div class="card-body">
+        <div class="mod-list">
+          <div class="mod-item">Step 1 — Push feature branch<span class="badge b-blue">git push</span></div>
+          <div class="mod-item">Step 2 — Create Pull Request on GitHub<span class="badge b-blue">PR</span></div>
+          <div class="mod-item">Step 3 — Describe your changes<span class="badge b-blue">Description</span></div>
+          <div class="mod-item">Step 4 — Mentor reviews code<span class="badge b-orange">Review</span></div>
+          <div class="mod-item">Step 5 — Merge Pull Request<span class="badge b-green">Merged</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Handling Merge Conflicts</h3></div>
+      <div class="card-body">
+        <div class="code" style="color:#ef4444"><<<<<<< HEAD
+const PORT = 5000;  // Your change
+=======
+const PORT = 3000;  // Other person's change
+>>>>>>> feature/login</div>
+        <div class="code" style="margin-top:8px">// Resolution steps:
+// 1. Open conflicting file
+// 2. Choose the correct version
+// 3. Remove conflict markers
+// 4. Save file then:
+
+git add .
+git commit -m "Resolved merge conflict"
+git push</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Undo Changes</h3></div>
+      <div class="card-body">
+        <div class="code"># Discard file changes
+git checkout -- Login.jsx
+git restore Login.jsx      # Modern
+
+# Unstage file
+git reset Login.jsx
+
+# Undo last commit (keep changes)
+git reset --soft HEAD~1
+
+# Undo last commit (remove changes)
+git reset --hard HEAD~1
+
+# View history
+git log --oneline
+# Output:
+# d24e6f Login Added
+# 7bc92a Dashboard Added
+# 3aa567 Initial Commit</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Repository Structure</h3></div>
+    <div class="card-body">
+      <div class="code">employee-management-system/
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+├── backend/
+│   ├── routes/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── config/
+│   └── package.json
+│
+├── README.md
+└── .env.example</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HOME OVERVIEW ===== -->
+<div class="page active" id="page-home">
+  <!-- HERO BANNER -->
+  <div class="hero">
+    <div class="hero-top">
+      <div>
+        <div class="hero-greet" id="hero-greet">Good Morning</div>
+        <h1>Welcome to WorkDay Enterprise 👋</h1>
+        <p class="sub">Your unified workspace for employee management, asset tracking, attendance, notifications and audit logs — built across Tasks 1, 2, 4, 5 &amp; 6.</p>
+        <div class="hero-tags">
+          <span class="hero-pill">🔐 Task 1 — Auth</span>
+          <span class="hero-pill">🐙 Task 2 — GitHub</span>
+          <span class="hero-pill">📘 Task 4 — Employees</span>
+          <span class="hero-pill">⚡ Task 5 — Workflow Engine</span>
+          <span class="hero-pill">🚀 Task 6 — Production</span>
+        </div>
+        <div class="hero-actions">
+          <button class="hero-btn primary" onclick="go('create',document.getElementById('nav-create'),'blue')">➕ Add Employee</button>
+          <button class="hero-btn ghost" onclick="go('attendance',document.getElementById('nav-attendance'),'blue')">🗓️ View Attendance</button>
+        </div>
+      </div>
+      <div class="hero-clock">
+        <div class="time" id="hero-time">00:00:00</div>
+        <div class="date" id="hero-date">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENHANCED STATS -->
+  <div class="stats-row">
+    <div class="stat2"><div class="icon-box ib-blue">👥</div><div><div class="s-label">Total Employees</div><div class="s-val" id="ov-emp">3</div><div class="s-trend" style="color:var(--green)">▲ Active workforce</div></div></div>
+    <div class="stat2"><div class="icon-box ib-purple">💼</div><div><div class="s-label">Total Assets</div><div class="s-val" id="ov-ast">5</div><div class="s-trend" style="color:var(--muted)">Allocated &amp; available</div></div></div>
+    <div class="stat2"><div class="icon-box ib-green">🏢</div><div><div class="s-label">Departments</div><div class="s-val" id="ov-dep">5</div><div class="s-trend" style="color:var(--muted)">Across organization</div></div></div>
+    <div class="stat2"><div class="icon-box ib-orange">🎯</div><div><div class="s-label">Skills Tracked</div><div class="s-val" id="ov-skl">10</div><div class="s-trend" style="color:var(--muted)">Many-to-many map</div></div></div>
+    <div class="stat2"><div class="icon-box ib-pink">🔔</div><div><div class="s-label">Unread Alerts</div><div class="s-val" id="ov-notif">3</div><div class="s-trend" style="color:var(--orange)">Needs attention</div></div></div>
+    <div class="stat2"><div class="icon-box ib-green">✅</div><div><div class="s-label">Present Today</div><div class="s-val" id="ov-present">0</div><div class="s-trend" style="color:var(--muted)">of <span id="ov-emp2">0</span> employees</div></div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+    <div class="tcard">
+      <div class="tcard-top"><h3>🔐 Task 1 — Login &amp; Signup</h3><span class="badge b-green">100%</span></div>
+      <div class="tcard-bar"><div class="tcard-bar-fill" style="width:100%;background:linear-gradient(90deg,#f472b6,#ec4899)"></div></div>
+      <div class="mod-list">
+        <div class="mod-item" style="font-size:11px">JWT Auth<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">bcrypt Hashing<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">React Frontend<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">PostgreSQL DB<span class="mod-done">✅</span></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tcard-top"><h3>🐙 Task 2 — GitHub</h3><span class="badge b-purple">100%</span></div>
+      <div class="tcard-bar"><div class="tcard-bar-fill" style="width:100%;background:linear-gradient(90deg,#a78bfa,#7c5cfc)"></div></div>
+      <div class="mod-list">
+        <div class="mod-item" style="font-size:11px">Git Setup<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Branch Strategy<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Pull Requests<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Merge Conflicts<span class="mod-done">✅</span></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tcard-top"><h3>📘 Task 4 — Employees</h3><span class="badge b-blue">100%</span></div>
+      <div class="tcard-bar"><div class="tcard-bar-fill" style="width:100%;background:linear-gradient(90deg,#4f8ef7,#7dd3fc)"></div></div>
+      <div class="mod-list">
+        <div class="mod-item" style="font-size:11px">CRUD APIs<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Image Upload<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">SQL JOINs<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Attendance<span class="mod-done">✅</span></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tcard-top"><h3>⚡ Task 5 — Workflow</h3><span class="badge b-purple">100%</span></div>
+      <div class="tcard-bar"><div class="tcard-bar-fill" style="width:100%;background:linear-gradient(90deg,#7c5cfc,#ec4899)"></div></div>
+      <div class="mod-list">
+        <div class="mod-item" style="font-size:11px">Asset Mgmt<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Notifications<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Audit Trail<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">DB Views<span class="mod-done">✅</span></div>
+      </div>
+    </div>
+    <div class="tcard">
+      <div class="tcard-top"><h3>🚀 Task 6 — Production</h3><span class="badge b-green">100%</span></div>
+      <div class="tcard-bar"><div class="tcard-bar-fill" style="width:100%;background:linear-gradient(90deg,#10b981,#4f8ef7)"></div></div>
+      <div class="mod-list">
+        <div class="mod-item" style="font-size:11px">20 Modules<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Jest Tests<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">Docker<span class="mod-done">✅</span></div>
+        <div class="mod-item" style="font-size:11px">CI/CD<span class="mod-done">✅</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1: 3 charts -->
+  <div class="g3" style="margin-bottom:14px">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>🍩 Asset Status</h3><span class="tag tag-purple">Doughnut</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="pie-chart" height="160"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>📊 Dept. Employees</h3><span class="tag tag-blue">Bar</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="bar-chart" height="160"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>🎯 Skills Usage</h3><span class="tag tag-green">Horizontal Bar</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="skill-chart" height="160"></canvas></div>
+    </div>
+  </div>
+  <!-- Charts Row 2: 2 charts -->
+  <div class="g2">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>📈 Monthly Hiring Trend</h3><span class="tag tag-blue">Line</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="line-chart" height="160"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>💰 Salary Distribution</h3><span class="tag tag-orange">Radar</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="radar-chart" height="160"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== EMPLOYEE LIST ===== -->
+<div class="page" id="page-employees">
+  <div class="page-header">
+    <h1>Employee List</h1>
+    <p>Task 4 — GET /api/employees <span class="tag tag-blue">JOIN Query</span><span class="tag tag-blue">Pagination</span></p>
+  </div>
+  <div class="search-wrap"><span class="s-icon">🔍</span><input id="emp-q" placeholder="Search by name..." oninput="renderEmpTable()"/></div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <select id="emp-dept-filter" onchange="renderEmpTable()" style="flex:1">
+      <option value="">All Departments</option>
+    </select>
+    <select id="emp-sort" onchange="renderEmpTable()" style="flex:1">
+      <option value="">Sort: Default</option>
+      <option value="sal-d">Salary High→Low</option>
+      <option value="sal-a">Salary Low→High</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>All Employees</h3><span id="emp-count" style="font-size:11px;color:var(--muted)"></span></div>
+    <table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Department</th><th>Designation</th><th>Salary</th><th>Skills</th><th>Action</th></tr></thead>
+    <tbody id="emp-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== ADD EMPLOYEE ===== -->
+<div class="page" id="page-create">
+  <div class="page-header">
+    <h1>Add Employee</h1>
+    <p>Task 4 — POST /api/employees <span class="tag tag-blue">Joi Validation</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Employee Details</h3></div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input id="fn" placeholder="Rahul Sharma"/></div>
+        <div class="form-group"><label>Email *</label><input id="fe" type="email" placeholder="rahul@company.com"/></div>
+        <div class="form-group"><label>Phone</label><input id="fp" placeholder="9876543210"/></div>
+        <div class="form-group"><label>Designation *</label><input id="fd" placeholder="Software Engineer"/></div>
+        <div class="form-group"><label>Department *</label><select id="fdept"><option value="">-- Select --</option></select></div>
+        <div class="form-group"><label>Salary (₹)</label><input id="fs" type="number" placeholder="50000"/></div>
+        <div class="form-group full"><label>Address</label><textarea id="fa" placeholder="Enter address"></textarea></div>
+        <div class="form-group full"><label>Select Skills (click to toggle)</label><div class="chips" id="skill-chips"></div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-blue" onclick="addEmployee()">✅ Save Employee</button>
+        <button class="btn" style="background:var(--border);color:var(--text)" onclick="clearEmpForm()">Clear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== IMAGE UPLOAD ===== -->
+<div class="page" id="page-upload">
+  <div class="page-header">
+    <h1>Image Upload</h1>
+    <p>Task 4 — POST /api/employees/upload <span class="tag tag-blue">Multer</span><span class="tag tag-blue">Max 5 files</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Upload Documents</h3></div>
+    <div class="card-body">
+      <div class="form-group" style="margin-bottom:12px"><label>Select Employee</label><select id="up-emp"><option value="">-- Select Employee --</option></select></div>
+      <div class="upload-zone" onclick="document.getElementById('upfile').click()">
+        <div class="uz-icon">📂</div>
+        <p>Click to select files — JPG, PNG, PDF (max 5)</p>
+        <input type="file" id="upfile" multiple accept=".jpg,.jpeg,.png,.pdf" style="display:none" onchange="prevFiles(this)"/>
+      </div>
+      <div class="upload-preview" id="up-prev"></div>
+      <div class="btn-row"><button class="btn btn-blue" onclick="doUpload()">📤 Upload</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Uploaded Files</h3></div>
+    <table><thead><tr><th>Employee</th><th>File</th><th>Type</th><th>Date</th></tr></thead>
+    <tbody id="up-tbody"><tr><td colspan="4" style="text-align:center;color:var(--muted);padding:16px">No uploads yet</td></tr></tbody></table>
+  </div>
+</div>
+
+<!-- ===== DEPARTMENTS ===== -->
+<div class="page" id="page-depts">
+  <div class="page-header">
+    <h1>Department Master</h1>
+    <p>Task 4 — GET /api/departments <span class="tag tag-blue">CRUD</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Add Department</h3></div>
+    <div class="card-body" style="display:flex;gap:10px">
+      <input id="dept-in" placeholder="Department name" style="flex:1"/>
+      <button class="btn btn-blue" onclick="addDept()">Add</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>All Departments</h3></div>
+    <table><thead><tr><th>#</th><th>Name</th><th>Employees</th></tr></thead>
+    <tbody id="dept-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== SKILLS ===== -->
+<div class="page" id="page-skills-page">
+  <div class="page-header">
+    <h1>Skills Master</h1>
+    <p>Task 4 — GET /api/skills <span class="tag tag-blue">Many-to-Many</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Add Skill</h3></div>
+    <div class="card-body" style="display:flex;gap:10px">
+      <input id="skill-in" placeholder="Skill name" style="flex:1"/>
+      <button class="btn btn-blue" onclick="addSkill()">Add</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>All Skills</h3></div>
+    <table><thead><tr><th>#</th><th>Skill</th><th>Employees</th></tr></thead>
+    <tbody id="skill-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== ATTENDANCE HISTORY ===== -->
+<div class="page" id="page-attendance">
+  <div class="page-header">
+    <h1>Attendance History</h1>
+    <p>Task 4 — GET /api/attendance <span class="tag tag-blue">Daily Log</span><span class="tag tag-green">Live Tracker</span></p>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat green"><div class="s-label">Present Today</div><div class="s-val" id="att-present">0</div></div>
+    <div class="stat red"><div class="s-label">Absent Today</div><div class="s-val" id="att-absent">0</div></div>
+    <div class="stat orange"><div class="s-label">On Leave</div><div class="s-val" id="att-leave">0</div></div>
+    <div class="stat purple"><div class="s-label">Late Arrivals</div><div class="s-val" id="att-late">0</div></div>
+    <div class="stat blue"><div class="s-label">Avg Attendance</div><div class="s-val" id="att-avg">0%</div></div>
+  </div>
+
+  <div class="g2" style="margin-bottom:14px">
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>📊 Weekly Attendance Trend</h3><span class="tag tag-blue">Line</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="att-line-chart" height="170"></canvas></div>
+    </div>
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header"><h3>🍩 Today's Status Split</h3><span class="tag tag-green">Doughnut</span></div>
+      <div class="card-body" style="padding:12px"><canvas id="att-pie-chart" height="170"></canvas></div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <div class="search-wrap" style="flex:2;min-width:200px;margin-bottom:0"><span class="s-icon">🔍</span><input id="att-q" placeholder="Search employee..." oninput="renderAttendance()"/></div>
+    <select id="att-status-filter" onchange="renderAttendance()" style="flex:1">
+      <option value="">All Status</option>
+      <option value="Present">Present</option>
+      <option value="Late">Late</option>
+      <option value="Absent">Absent</option>
+      <option value="Leave">On Leave</option>
+    </select>
+    <select id="att-date-filter" onchange="renderAttendance()" style="flex:1"></select>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h3>Attendance Log</h3><span id="att-count" style="font-size:11px;color:var(--muted)"></span></div>
+    <table><thead><tr><th>#</th><th>Employee</th><th>Department</th><th>Date</th><th>Check-In</th><th>Check-Out</th><th>Hours</th><th>Status</th></tr></thead>
+    <tbody id="att-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== ASSETS ===== -->
+<div class="page" id="page-assets">
+  <div class="page-header">
+    <h1>Asset Management</h1>
+    <p>Task 5 — GET /api/assets <span class="tag tag-purple">Pagination</span><span class="tag tag-purple">Filter</span></p>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <div class="search-wrap" style="flex:1;margin-bottom:0"><span class="s-icon">🔍</span><input id="ast-q" placeholder="Search assets..." oninput="renderAssets()"/></div>
+    <select id="ast-filter" onchange="renderAssets()">
+      <option value="">All Status</option>
+      <option>Available</option><option>Allocated</option>
+    </select>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>All Assets</h3><span id="ast-count" style="font-size:11px;color:var(--muted)"></span></div>
+    <table><thead><tr><th>#</th><th>Code</th><th>Name</th><th>Type</th><th>Cost</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody id="ast-tbody"></tbody></table>
+  </div>
+</div>
+
+<!-- ===== ASSIGN / RETURN ===== -->
+<div class="page" id="page-assign">
+  <div class="page-header">
+    <h1>Assign / Return Asset</h1>
+    <p>Task 5 — POST /api/assets/assign <span class="tag tag-purple">Audit Log</span><span class="tag tag-purple">Notification</span></p>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>🔗 Assign Asset</h3></div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:10px"><label>Asset (Available only)</label><select id="asgn-ast"><option value="">-- Select --</option></select></div>
+        <div class="form-group" style="margin-bottom:10px"><label>Employee</label><select id="asgn-emp"><option value="">-- Select --</option></select></div>
+        <div class="btn-row"><button class="btn btn-purple" onclick="doAssign()">✅ Assign</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>↩️ Return Asset</h3></div>
+      <div class="card-body">
+        <div class="form-group" style="margin-bottom:10px"><label>Asset (Allocated only)</label><select id="ret-ast"><option value="">-- Select --</option></select></div>
+        <div class="btn-row"><button class="btn btn-green" onclick="doReturn()">↩️ Return</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NOTIFICATIONS ===== -->
+<div class="page" id="page-notifs">
+  <div class="page-header">
+    <h1>Notifications</h1>
+    <p>Task 5 — GET /api/assets/notifications <span class="tag tag-purple">Real-time Alerts</span></p>
+  </div>
+  <div id="notif-list"></div>
+</div>
+
+<!-- ===== AUDIT TRAIL ===== -->
+<div class="page" id="page-audit">
+  <div class="page-header">
+    <h1>Audit Trail</h1>
+    <p>Task 5 — GET /api/assets/audit-logs <span class="tag tag-purple">Complete Log</span></p>
+  </div>
+  <div id="audit-list"></div>
+</div>
+
+<!-- ===== HEALTH CHECK ===== -->
+<div class="page" id="page-health">
+  <div class="page-header">
+    <h1>Health Check</h1>
+    <p>Task 6 — Module 20 <span class="tag tag-green">GET /api/v1/health</span></p>
+  </div>
+  <div class="health-row">
+    <div class="h-item"><div class="h-icon">🟢</div><div class="h-lbl">API Status</div><div class="h-val" style="color:var(--green)">UP</div></div>
+    <div class="h-item"><div class="h-icon">🗄️</div><div class="h-lbl">Database</div><div class="h-val" style="color:var(--green)">Connected</div></div>
+    <div class="h-item"><div class="h-icon">⏱️</div><div class="h-lbl">Uptime</div><div class="h-val" id="uptime">0s</div></div>
+    <div class="h-item"><div class="h-icon">🌍</div><div class="h-lbl">Environment</div><div class="h-val">development</div></div>
+    <div class="h-item"><div class="h-icon">📊</div><div class="h-lbl">API Requests</div><div class="h-val" id="req-count">247</div></div>
+    <div class="h-item"><div class="h-icon">❌</div><div class="h-lbl">Errors Today</div><div class="h-val" style="color:var(--orange)">2</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>API Response</h3></div>
+    <div class="card-body">
+      <div class="code" id="health-json"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ARCHITECTURE ===== -->
+<div class="page" id="page-arch">
+  <div class="page-header">
+    <h1>Enterprise Architecture</h1>
+    <p>Task 6 — Module 1–10 <span class="tag tag-green">Controller→Service→Repository→DB</span></p>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Folder Structure</h3></div>
+      <div class="card-body">
+        <div class="code">backend/src/
+├── controllers/   ← HTTP req/res
+├── services/      ← Business logic
+├── repositories/  ← DB queries
+├── middleware/    ← Auth, Error
+├── validators/    ← Joi schemas
+├── routes/        ← /api/v1/
+├── config/        ← DB, Multer
+├── utils/         ← Logger, Cache
+├── jobs/          ← Cron tasks
+├── logs/          ← error.log
+└── tests/         ← Jest tests</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>20 Modules Implemented</h3></div>
+      <div class="card-body">
+        <div class="mod-list">
+          <div class="mod-item">M1 Enterprise Architecture<span class="mod-done">✅</span></div>
+          <div class="mod-item">M2 Environment Config (.env)<span class="mod-done">✅</span></div>
+          <div class="mod-item">M3 Centralized Error Handler<span class="mod-done">✅</span></div>
+          <div class="mod-item">M4 Joi Validation Layer<span class="mod-done">✅</span></div>
+          <div class="mod-item">M5 Winston Logging<span class="mod-done">✅</span></div>
+          <div class="mod-item">M6 API Versioning /v1<span class="mod-done">✅</span></div>
+          <div class="mod-item">M7 Node Cache<span class="mod-done">✅</span></div>
+          <div class="mod-item">M8 Pagination (LIMIT/OFFSET)<span class="mod-done">✅</span></div>
+          <div class="mod-item">M9 Search (ILIKE)<span class="mod-done">✅</span></div>
+          <div class="mod-item">M10 Sort & Filter<span class="mod-done">✅</span></div>
+          <div class="mod-item">M11 Cron Background Jobs<span class="mod-done">✅</span></div>
+          <div class="mod-item">M12 Nodemailer Email<span class="mod-done">✅</span></div>
+          <div class="mod-item">M13 File Storage Standards<span class="mod-done">✅</span></div>
+          <div class="mod-item">M14 DB Indexing<span class="mod-done">✅</span></div>
+          <div class="mod-item">M15 DB Views<span class="mod-done">✅</span></div>
+          <div class="mod-item">M16 Jest Unit Tests<span class="mod-done">✅</span></div>
+          <div class="mod-item">M17 Postman Collection<span class="mod-done">✅</span></div>
+          <div class="mod-item">M18 Docker<span class="mod-done">✅</span></div>
+          <div class="mod-item">M19 GitHub Actions CI/CD<span class="mod-done">✅</span></div>
+          <div class="mod-item">M20 Health Check /api/health<span class="mod-done">✅</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== UNIT TESTS ===== -->
+<div class="page" id="page-tests">
+  <div class="page-header">
+    <h1>Unit Testing</h1>
+    <p>Task 6 — Module 16 <span class="tag tag-green">Jest</span><span class="tag tag-green">8 Tests Passed</span></p>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Run Command</h3></div>
+    <div class="card-body"><div class="code">cd backend && npm test
+
+PASS  src/tests/employee.test.js
+  ✓ Pagination offset calculation      (2ms)
+  ✓ Search query builds correctly      (1ms)
+  ✓ Salary validation — valid          (1ms)
+  ✓ Salary validation — negative fails (1ms)
+  ✓ Email format validation            (1ms)
+  ✓ Phone must be 10 digits            (1ms)
+  ✓ JWT token structure                (1ms)
+  ✓ Audit log object structure         (1ms)
+
+Tests: 8 passed  |  Suites: 1  |  Time: 0.8s</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><h3>Test Results</h3><span class="badge b-green">8 PASSED</span></div>
+    <table><thead><tr><th>Test</th><th>Status</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>Pagination offset calculation</td><td><span class="badge b-green">PASS</span></td><td>2ms</td></tr>
+      <tr><td>Search query builds correctly</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>Salary validation — valid number</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>Salary validation — negative fails</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>Email format validation</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>Phone must be 10 digits</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>JWT token structure</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+      <tr><td>Audit log object structure</td><td><span class="badge b-green">PASS</span></td><td>1ms</td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<!-- ===== DOCKER / CICD ===== -->
+<div class="page" id="page-docker">
+  <div class="page-header">
+    <h1>Docker & CI/CD</h1>
+    <p>Task 6 — Module 18 + 19 <span class="tag tag-green">Docker</span><span class="tag tag-green">GitHub Actions</span></p>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-header"><h3>Dockerfile</h3></div>
+      <div class="card-body"><div class="code">FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 5000
+CMD ["node", "server.js"]</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>docker-compose up</h3></div>
+      <div class="card-body"><div class="code">services:
+  backend:   → localhost:5000
+  postgres:  → localhost:5432
+
+# Run:
+docker-compose up --build
+
+✅ backend started
+✅ postgres started</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>GitHub Actions CI/CD</h3></div>
+      <div class="card-body"><div class="code">Push to main branch
+       ↓
+GitHub Actions triggers
+       ↓
+npm install
+       ↓
+npm test (Jest)
+       ↓
+✅ Build passed → Deploy</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>.github/workflows/ci-cd.yml</h3></div>
+      <div class="card-body"><div class="code">on:
+  push:
+    branches: [main]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - run: npm install
+      - run: npm test</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ============================================
+     JAVASCRIPT
+============================================ -->
+<script>
+// ============================================
+// DATA STORE
+// ============================================
+let employees = [
+  {id:1,name:'Rahul Sharma',email:'rahul@workday.com',dept:'IT',designation:'Full Stack Dev',salary:75000,phone:'9876543210',address:'Jaipur',skills:['React','NodeJS','PostgreSQL']},
+  {id:2,name:'Priya Gupta',email:'priya@workday.com',dept:'HR',designation:'HR Manager',salary:55000,phone:'9876543211',address:'Delhi',skills:['Python','Java']},
+  {id:3,name:'Amit Kumar',email:'amit@workday.com',dept:'Finance',designation:'Finance Analyst',salary:65000,phone:'9876543212',address:'Mumbai',skills:['React','TypeScript']},
+  {id:4,name:'Sneha Verma',email:'sneha@workday.com',dept:'Marketing',designation:'Marketing Lead',salary:58000,phone:'9876543213',address:'Pune',skills:['JavaScript','React']},
+  {id:5,name:'Vikram Singh',email:'vikram@workday.com',dept:'Operations',designation:'Operations Manager',salary:70000,phone:'9876543214',address:'Lucknow',skills:['Docker','AWS']},
+  {id:6,name:'Anjali Mehta',email:'anjali@workday.com',dept:'IT',designation:'Backend Developer',salary:72000,phone:'9876543215',address:'Ahmedabad',skills:['NodeJS','MongoDB','Docker']},
+  {id:7,name:'Karan Joshi',email:'karan@workday.com',dept:'IT',designation:'Frontend Developer',salary:68000,phone:'9876543216',address:'Indore',skills:['React','JavaScript','TypeScript']},
+  {id:8,name:'Neha Reddy',email:'neha@workday.com',dept:'HR',designation:'Recruitment Specialist',salary:50000,phone:'9876543217',address:'Hyderabad',skills:['Java','Python']},
+  {id:9,name:'Rohit Yadav',email:'rohit@workday.com',dept:'Finance',designation:'Accountant',salary:52000,phone:'9876543218',address:'Kanpur',skills:['Python']},
+  {id:10,name:'Pooja Nair',email:'pooja@workday.com',dept:'Marketing',designation:'Content Strategist',salary:54000,phone:'9876543219',address:'Kochi',skills:['React','JavaScript']},
+  {id:11,name:'Arjun Malhotra',email:'arjun@workday.com',dept:'Operations',designation:'DevOps Engineer',salary:80000,phone:'9876543220',address:'Chandigarh',skills:['Docker','AWS','PostgreSQL']},
+];
+let departments = ['IT','HR','Finance','Marketing','Operations'];
+let skillsList = ['React','NodeJS','PostgreSQL','Python','Java','JavaScript','TypeScript','MongoDB','Docker','AWS'];
+let selectedSkills = [];
+let nextEmpId = 12;
+
+let assets = [
+  {id:1,code:'AST001',name:'Dell Laptop',type:'Electronics',cost:55000,status:'Available'},
+  {id:2,code:'AST002',name:'HP Monitor',type:'Electronics',cost:15000,status:'Available'},
+  {id:3,code:'AST003',name:'Office Chair',type:'Furniture',cost:8000,status:'Available'},
+  {id:4,code:'AST004',name:'MacBook Pro',type:'Electronics',cost:120000,status:'Allocated'},
+  {id:5,code:'AST005',name:'Standing Desk',type:'Furniture',cost:25000,status:'Available'},
+];
+let notifications = [
+  {id:1,title:'Asset Assigned',msg:'MacBook Pro has been assigned to you.',read:false,time:'2024-06-10 10:00'},
+  {id:2,title:'Leave Approved',msg:'Your leave request has been approved.',read:false,time:'2024-06-09 14:30'},
+  {id:3,title:'New Task',msg:'You have a new task assigned.',read:true,time:'2024-06-08 09:00'},
+];
+let auditLogs = [
+  {id:1,table:'assets',action:'UPDATE',record:4,old:'{"status":"Available"}',new:'{"status":"Allocated"}',by:1,time:'2024-06-10 10:00'},
+  {id:2,table:'assets',action:'INSERT',record:5,old:null,new:'{"asset_name":"Standing Desk"}',by:1,time:'2024-06-09 11:00'},
+  {id:3,table:'notifications',action:'INSERT',record:1,old:null,new:'{"title":"Asset Assigned"}',by:1,time:'2024-06-10 10:01'},
+];
+let uploads = [];
+let uptimeStart = Date.now();
+
+// ============================================
+// ATTENDANCE DATA (last 7 days, auto-generated)
+// ============================================
+let attendanceRecords = [];
+(function generateAttendance(){
+  const dates = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  const inTimes  = ['09:00 AM','09:05 AM','08:55 AM','09:10 AM','09:02 AM'];
+  const outTimes = ['06:00 PM','06:10 PM','06:05 PM','05:55 PM','06:15 PM'];
+  let id=1;
+  employees.forEach((emp)=>{
+    dates.forEach((date, di)=>{
+      const seed = (emp.id*7 + di*3) % 10;
+      let status='Present', checkIn=inTimes[seed%5], checkOut=outTimes[seed%4], hours=9;
+      if(seed===8){status='Absent';checkIn='-';checkOut='-';hours=0;}
+      else if(seed===6 || seed===9){status='Leave';checkIn='-';checkOut='-';hours=0;}
+      else if(seed===3 || seed===7){status='Late';checkIn='10:1'+(seed%5)+' AM';checkOut='06:30 PM';hours=8;}
+      attendanceRecords.push({id:id++, empId:emp.id, name:emp.name, dept:emp.dept, date, checkIn, checkOut, hours, status});
+    });
+  });
+})();
+
+// ============================================
+// NAVIGATION
+// ============================================
+function go(page, el, color) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('active','active-purple','active-green','active-pink','active-violet')});
+  document.getElementById('page-'+page).classList.add('active');
+  const cls = color==='purple'?'active-purple':color==='green'?'active-green':color==='pink'?'active-pink':color==='violet'?'active-violet':'active';
+  el.classList.add(cls);
+  pageInit(page);
+}
+
+function pageInit(p) {
+  if(p==='home') initHome();
+  if(p==='employees') renderEmpTable();
+  if(p==='create') initCreate();
+  if(p==='upload') initUpload();
+  if(p==='depts') renderDepts();
+  if(p==='skills-page') renderSkillsPage();
+  if(p==='attendance') renderAttendance();
+  if(p==='assets') renderAssets();
+  if(p==='assign') initAssign();
+  if(p==='notifs') renderNotifs();
+  if(p==='audit') renderAudit();
+  if(p==='health') initHealth();
+}
+
+// Demo auth users store
+let demoUsers = [{name:'John',email:'john@gmail.com',password:'123456'}];
+
+function switchAuthTab(tab){
+  document.getElementById('tab-signup').classList.toggle('on', tab==='signup');
+  document.getElementById('tab-login').classList.toggle('on', tab==='login');
+  document.getElementById('form-signup').style.display = tab==='signup' ? '' : 'none';
+  document.getElementById('form-login').style.display = tab==='login' ? '' : 'none';
+}
+
+function demoRegister(){
+  const n=document.getElementById('reg-name').value.trim();
+  const e=document.getElementById('reg-email').value.trim();
+  const p=document.getElementById('reg-pass').value;
+  const res=document.getElementById('reg-result');
+  res.className='auth-result show';
+  if(!n||!e||!p){res.classList.add('err');res.innerHTML='⚠️ Please fill all fields';return;}
+  if(p.length<6){res.classList.add('err');res.innerHTML='⚠️ Password must be at least 6 characters';return;}
+  if(demoUsers.find(u=>u.email===e)){res.classList.add('err');res.innerHTML='⚠️ Email already registered';return;}
+  demoUsers.push({name:n,email:e,password:p});
+  res.classList.add('ok');
+  res.innerHTML=`✅ <strong>${n}</strong> registered successfully!<br><span style="color:var(--muted);font-size:11px">Password hashed with bcrypt &amp; stored in PostgreSQL "users" table.</span>`;
+  toast('✅ Account created! You can now log in.');
+  setTimeout(()=>{switchAuthTab('login');document.getElementById('log-email').value=e;},900);
+}
+
+function demoLogin(){
+  const e=document.getElementById('log-email').value.trim();
+  const p=document.getElementById('log-pass').value;
+  const res=document.getElementById('log-result');
+  res.className='auth-result show';
+  if(!e||!p){res.classList.add('err');res.innerHTML='⚠️ Please fill all fields';return;}
+  const user=demoUsers.find(u=>u.email===e);
+  if(!user){res.classList.add('err');res.innerHTML='⚠️ No account found with this email';return;}
+  if(user.password!==p){res.classList.add('err');res.innerHTML='⚠️ Incorrect password';return;}
+  const fakeToken='eyJhbGciOiJIUzI1NiJ9.eyJpZCI6MX0.DEMO_JWT_TOKEN';
+  res.classList.add('ok');
+  res.innerHTML=`✅ Welcome back, <strong>${user.name}</strong>!<br><span style="color:var(--muted);font-size:11px">JWT issued: ${fakeToken.substring(0,28)}...</span>`;
+  toast(`✅ Login success! Welcome ${user.name}.`);
+}
+
+// ============================================
+// HOME / OVERVIEW
+// ============================================
+function initHome() {
+  document.getElementById('ov-emp').textContent = employees.length;
+  document.getElementById('ov-emp2').textContent = employees.length;
+  document.getElementById('ov-ast').textContent = assets.length;
+  document.getElementById('ov-dep').textContent = departments.length;
+  document.getElementById('ov-skl').textContent = skillsList.length;
+  document.getElementById('ov-notif').textContent = notifications.filter(n=>!n.read).length;
+  const lastDate = attendanceRecords.length ? attendanceRecords[attendanceRecords.length-1].date : null;
+  const todayRecs = attendanceRecords.filter(r=>r.date===lastDate);
+  document.getElementById('ov-present').textContent = todayRecs.filter(r=>r.status==='Present'||r.status==='Late').length;
+  updateHeroClock();
+  if(!window._heroClockInterval) window._heroClockInterval = setInterval(updateHeroClock, 1000);
+  drawCharts();
+}
+
+function updateHeroClock(){
+  const now = new Date();
+  const h = now.getHours();
+  const greetEl = document.getElementById('hero-greet');
+  if(greetEl) greetEl.textContent = h<12 ? '☀️ Good Morning' : h<17 ? '🌤️ Good Afternoon' : '🌙 Good Evening';
+  const timeEl = document.getElementById('hero-time');
+  if(timeEl) timeEl.textContent = now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const dateEl = document.getElementById('hero-date');
+  if(dateEl) dateEl.textContent = now.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+let pieInst, barInst, skillInst, lineInst, radarInst;
+function drawCharts() {
+  const avail = assets.filter(a=>a.status==='Available').length;
+  const alloc = assets.filter(a=>a.status==='Allocated').length;
+  const gridColor = '#1e2d45';
+  const tickColor = '#64748b';
+  const legColor = '#94a3b8';
+
+  // Chart 1 — Doughnut: Asset Status
+  if(pieInst) pieInst.destroy();
+  pieInst = new Chart(document.getElementById('pie-chart'),{
+    type:'doughnut',
+    data:{labels:['Available','Allocated','Returned'],datasets:[{data:[avail,alloc,1],backgroundColor:['#10b981','#f59e0b','#7c5cfc'],borderWidth:0}]},
+    options:{plugins:{legend:{labels:{color:legColor,font:{size:10},boxWidth:10}}},cutout:'60%'}
+  });
+
+  // Chart 2 — Bar: Dept wise employees
+  const deptCounts = departments.map(d=>employees.filter(e=>e.dept===d).length);
+  if(barInst) barInst.destroy();
+  barInst = new Chart(document.getElementById('bar-chart'),{
+    type:'bar',
+    data:{labels:departments,datasets:[{label:'Employees',data:deptCounts,backgroundColor:['#4f8ef7','#7c5cfc','#10b981','#f59e0b','#ec4899'],borderRadius:5}]},
+    options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:tickColor,font:{size:9}},grid:{color:gridColor}},y:{ticks:{color:tickColor,stepSize:1},grid:{color:gridColor}}}}
+  });
+
+  // Chart 3 — Horizontal Bar: Skills usage
+  const topSkills = skillsList.slice(0,6);
+  const skillCounts = topSkills.map(s=>employees.filter(e=>e.skills.includes(s)).length);
+  if(skillInst) skillInst.destroy();
+  skillInst = new Chart(document.getElementById('skill-chart'),{
+    type:'bar',
+    data:{labels:topSkills,datasets:[{label:'Employees',data:skillCounts,backgroundColor:'#10b981',borderRadius:4}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:tickColor,stepSize:1},grid:{color:gridColor}},y:{ticks:{color:tickColor,font:{size:9}},grid:{color:gridColor}}}}
+  });
+
+  // Chart 4 — Line: Monthly hiring trend (simulated)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const hires  = [1,0,1,2,1,employees.length];
+  if(lineInst) lineInst.destroy();
+  lineInst = new Chart(document.getElementById('line-chart'),{
+    type:'line',
+    data:{labels:months,datasets:[{label:'New Hires',data:hires,borderColor:'#4f8ef7',backgroundColor:'rgba(79,142,247,.12)',fill:true,tension:.4,pointBackgroundColor:'#4f8ef7',pointRadius:4}]},
+    options:{plugins:{legend:{labels:{color:legColor,font:{size:10},boxWidth:10}}},scales:{x:{ticks:{color:tickColor,font:{size:9}},grid:{color:gridColor}},y:{ticks:{color:tickColor,stepSize:1},grid:{color:gridColor}}}}
+  });
+
+  // Chart 5 — Radar: Salary distribution by dept
+  const salByDept = departments.map(d=>{
+    const emps=employees.filter(e=>e.dept===d);
+    return emps.length ? Math.round(emps.reduce((s,e)=>s+e.salary,0)/emps.length/1000) : 0;
+  });
+  if(radarInst) radarInst.destroy();
+  radarInst = new Chart(document.getElementById('radar-chart'),{
+    type:'radar',
+    data:{labels:departments,datasets:[{label:'Avg Salary (K)',data:salByDept,borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.15)',pointBackgroundColor:'#f59e0b',pointRadius:3}]},
+    options:{plugins:{legend:{labels:{color:legColor,font:{size:10},boxWidth:10}}},scales:{r:{ticks:{color:tickColor,font:{size:9},backdropColor:'transparent'},grid:{color:gridColor},angleLines:{color:gridColor},pointLabels:{color:tickColor,font:{size:9}}}}}
+  });
+}
+
+// ============================================
+// EMPLOYEES
+// ============================================
+function renderEmpTable() {
+  const q = (document.getElementById('emp-q')?.value||'').toLowerCase();
+  const deptF = document.getElementById('emp-dept-filter')?.value||'';
+  const sortV = document.getElementById('emp-sort')?.value||'';
+
+  // populate dept filter
+  const sel = document.getElementById('emp-dept-filter');
+  if(sel.options.length<=1){departments.forEach(d=>{const o=document.createElement('option');o.textContent=d;sel.appendChild(o)});}
+
+  let data = employees.filter(e=>e.name.toLowerCase().includes(q)&&(deptF?e.dept===deptF:true));
+  if(sortV==='sal-d') data.sort((a,b)=>b.salary-a.salary);
+  if(sortV==='sal-a') data.sort((a,b)=>a.salary-b.salary);
+
+  document.getElementById('emp-count').textContent=`${data.length} record(s)`;
+  document.getElementById('emp-tbody').innerHTML = data.length ? data.map((e,i)=>`
+    <tr>
+      <td>${i+1}</td><td><strong>${e.name}</strong></td><td style="color:var(--muted)">${e.email}</td>
+      <td><span class="badge b-blue">${e.dept}</span></td>
+      <td>${e.designation}</td><td>₹${Number(e.salary).toLocaleString()}</td>
+      <td>${e.skills.map(s=>`<span class="badge b-purple" style="margin:1px">${s}</span>`).join('')}</td>
+      <td><button class="btn btn-red btn-sm" onclick="delEmp(${e.id})">Del</button></td>
+    </tr>`).join('')
+  : `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No employees found</td></tr>`;
+}
+
+function delEmp(id){employees=employees.filter(e=>e.id!==id);renderEmpTable();toast('🗑️ Employee deleted');}
+
+// ============================================
+// CREATE EMPLOYEE
+// ============================================
+function initCreate() {
+  // Populate dept dropdown
+  const s=document.getElementById('fdept');
+  s.innerHTML='<option value="">-- Select --</option>'+departments.map(d=>`<option>${d}</option>`).join('');
+  // Skill chips
+  selectedSkills=[];
+  document.getElementById('skill-chips').innerHTML=skillsList.map(sk=>`<div class="chip" onclick="toggleSkill(this,'${sk}')">${sk}</div>`).join('');
+}
+function toggleSkill(el,sk){if(el.classList.contains('on')){el.classList.remove('on');selectedSkills=selectedSkills.filter(s=>s!==sk)}else{el.classList.add('on');selectedSkills.push(sk)}}
+function addEmployee(){
+  const n=document.getElementById('fn').value.trim(),e=document.getElementById('fe').value.trim(),d=document.getElementById('fdept').value,desig=document.getElementById('fd').value.trim();
+  if(!n||!e||!d||!desig) return toast('⚠️ Fill all required fields');
+  const emailOk=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+  if(!emailOk) return toast('⚠️ Invalid email');
+  employees.push({id:nextEmpId++,name:n,email:e,dept:d,designation:desig,salary:+document.getElementById('fs').value||0,phone:document.getElementById('fp').value,address:document.getElementById('fa').value,skills:[...selectedSkills]});
+  clearEmpForm();
+  toast('✅ Employee added!');
+  go('employees',document.getElementById('nav-employees'),'blue');
+}
+function clearEmpForm(){['fn','fe','fp','fd','fs','fa'].forEach(id=>document.getElementById(id).value='');document.getElementById('fdept').value='';initCreate();}
+
+// ============================================
+// UPLOAD
+// ============================================
+function initUpload(){
+  const s=document.getElementById('up-emp');
+  s.innerHTML='<option value="">-- Select Employee --</option>'+employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+}
+function prevFiles(inp){
+  const pv=document.getElementById('up-prev');pv.innerHTML='';
+  Array.from(inp.files).slice(0,5).forEach(f=>{
+    if(f.type.startsWith('image/')){const r=new FileReader();r.onload=ev=>{const img=document.createElement('img');img.src=ev.target.result;img.className='prev-img';pv.appendChild(img)};r.readAsDataURL(f)}
+    else{const d=document.createElement('div');d.className='prev-file';d.textContent='📄';pv.appendChild(d)}
+  });
+}
+function doUpload(){
+  const eid=document.getElementById('up-emp').value,files=document.getElementById('upfile').files;
+  if(!eid) return toast('⚠️ Select employee');
+  if(!files.length) return toast('⚠️ Select files');
+  const emp=employees.find(e=>e.id==eid);
+  Array.from(files).slice(0,5).forEach(f=>uploads.push({emp:emp.name,file:f.name,type:f.type.split('/')[1]||'pdf',date:new Date().toLocaleDateString('en-IN')}));
+  document.getElementById('upfile').value='';document.getElementById('up-prev').innerHTML='';
+  document.getElementById('up-tbody').innerHTML=uploads.map(u=>`<tr><td>${u.emp}</td><td>${u.file}</td><td>${u.type.toUpperCase()}</td><td>${u.date}</td></tr>`).join('');
+  toast(`✅ ${files.length} file(s) uploaded!`);
+}
+
+// ============================================
+// DEPARTMENTS
+// ============================================
+function renderDepts(){
+  document.getElementById('dept-tbody').innerHTML=departments.map((d,i)=>`<tr><td>${i+1}</td><td>${d}</td><td>${employees.filter(e=>e.dept===d).length}</td></tr>`).join('');
+}
+function addDept(){const v=document.getElementById('dept-in').value.trim();if(!v)return;if(departments.includes(v))return toast('⚠️ Already exists');departments.push(v);document.getElementById('dept-in').value='';renderDepts();toast(`✅ "${v}" added`);}
+
+// ============================================
+// SKILLS
+// ============================================
+function renderSkillsPage(){
+  document.getElementById('skill-tbody').innerHTML=skillsList.map((s,i)=>`<tr><td>${i+1}</td><td><span class="badge b-purple">${s}</span></td><td>${employees.filter(e=>e.skills.includes(s)).length}</td></tr>`).join('');
+}
+function addSkill(){const v=document.getElementById('skill-in').value.trim();if(!v)return;if(skillsList.includes(v))return toast('⚠️ Already exists');skillsList.push(v);document.getElementById('skill-in').value='';renderSkillsPage();toast(`✅ "${v}" added`);}
+
+// ============================================
+// ATTENDANCE
+// ============================================
+let attLineInst, attPieInst;
+function renderAttendance(){
+  const dates = [...new Set(attendanceRecords.map(r=>r.date))];
+  const today = dates[dates.length-1];
+
+  // populate date filter once
+  const dsel = document.getElementById('att-date-filter');
+  if(dsel.options.length===0){
+    dsel.innerHTML = '<option value="">All Dates</option>' + dates.map(d=>`<option value="${d}" ${d===today?'selected':''}>${d}${d===today?' (Today)':''}</option>`).join('');
+  }
+
+  const q = (document.getElementById('att-q').value||'').toLowerCase();
+  const statusF = document.getElementById('att-status-filter').value;
+  const dateF = document.getElementById('att-date-filter').value;
+
+  // ---- Today's summary stats ----
+  const todayRecs = attendanceRecords.filter(r=>r.date===today);
+  document.getElementById('att-present').textContent = todayRecs.filter(r=>r.status==='Present').length;
+  document.getElementById('att-absent').textContent  = todayRecs.filter(r=>r.status==='Absent').length;
+  document.getElementById('att-leave').textContent   = todayRecs.filter(r=>r.status==='Leave').length;
+  document.getElementById('att-late').textContent    = todayRecs.filter(r=>r.status==='Late').length;
+  const presentCount = attendanceRecords.filter(r=>r.status==='Present'||r.status==='Late').length;
+  document.getElementById('att-avg').textContent = Math.round(presentCount/attendanceRecords.length*100)+'%';
+
+  // ---- Weekly trend line chart ----
+  const presentByDate = dates.map(d=>attendanceRecords.filter(r=>r.date===d && (r.status==='Present'||r.status==='Late')).length);
+  const absentByDate  = dates.map(d=>attendanceRecords.filter(r=>r.date===d && r.status==='Absent').length);
+  if(attLineInst) attLineInst.destroy();
+  attLineInst = new Chart(document.getElementById('att-line-chart'),{
+    type:'line',
+    data:{labels:dates.map(d=>d.slice(5)),datasets:[
+      {label:'Present',data:presentByDate,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.12)',fill:true,tension:.4,pointRadius:3},
+      {label:'Absent',data:absentByDate,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointRadius:3}
+    ]},
+    options:{plugins:{legend:{labels:{color:'#94a3b8',font:{size:10},boxWidth:10}}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e2d45'}},y:{ticks:{color:'#64748b',stepSize:1},grid:{color:'#1e2d45'}}}}
+  });
+
+  // ---- Today's doughnut ----
+  if(attPieInst) attPieInst.destroy();
+  attPieInst = new Chart(document.getElementById('att-pie-chart'),{
+    type:'doughnut',
+    data:{labels:['Present','Late','Absent','Leave'],datasets:[{data:[
+      todayRecs.filter(r=>r.status==='Present').length,
+      todayRecs.filter(r=>r.status==='Late').length,
+      todayRecs.filter(r=>r.status==='Absent').length,
+      todayRecs.filter(r=>r.status==='Leave').length
+    ],backgroundColor:['#10b981','#f59e0b','#ef4444','#7c5cfc'],borderWidth:0}]},
+    options:{plugins:{legend:{labels:{color:'#94a3b8',font:{size:10},boxWidth:10}}},cutout:'60%'}
+  });
+
+  // ---- Table ----
+  let recs = attendanceRecords.filter(r=>{
+    if(q && !r.name.toLowerCase().includes(q)) return false;
+    if(statusF && r.status!==statusF) return false;
+    if(dateF && r.date!==dateF) return false;
+    return true;
+  });
+  recs = recs.slice().sort((a,b)=> b.date.localeCompare(a.date) || a.name.localeCompare(b.name));
+
+  document.getElementById('att-count').textContent = `${recs.length} records`;
+  const badgeFor = s => s==='Present'?'b-green':s==='Late'?'b-orange':s==='Absent'?'b-red':'b-purple';
+  document.getElementById('att-tbody').innerHTML = recs.map((r,i)=>`<tr>
+    <td>${i+1}</td>
+    <td><strong>${r.name}</strong></td>
+    <td>${r.dept}</td>
+    <td>${r.date}${r.date===today?' <span class="badge b-blue" style="margin-left:4px">Today</span>':''}</td>
+    <td>${r.checkIn}</td>
+    <td>${r.checkOut}</td>
+    <td>${r.hours>0?r.hours+'h':'-'}</td>
+    <td><span class="badge ${badgeFor(r.status)}">${r.status}</span></td>
+  </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No records found</td></tr>`;
+}
+
+// ============================================
+// ASSETS
+// ============================================
+function renderAssets(){
+  const q=(document.getElementById('ast-q')?.value||'').toLowerCase();
+  const f=document.getElementById('ast-filter')?.value||'';
+  let data=assets.filter(a=>a.name.toLowerCase().includes(q)&&(f?a.status===f:true));
+  document.getElementById('ast-count').textContent=`${data.length} record(s)`;
+  document.getElementById('ast-tbody').innerHTML=data.map((a,i)=>`
+    <tr>
+      <td>${i+1}</td><td>${a.code}</td><td><strong>${a.name}</strong></td><td>${a.type}</td>
+      <td>₹${Number(a.cost).toLocaleString()}</td>
+      <td><span class="badge ${a.status==='Available'?'b-green':'b-orange'}">${a.status}</span></td>
+      <td>${a.status==='Available'?`<button class="btn btn-purple btn-sm" onclick="quickAssign(${a.id})">Assign</button>`:`<button class="btn btn-green btn-sm" onclick="quickReturn(${a.id})">Return</button>`}</td>
+    </tr>`).join('');
+}
+
+// ============================================
+// ASSIGN / RETURN
+// ============================================
+function initAssign(){
+  const asel=document.getElementById('asgn-ast'),esel=document.getElementById('asgn-emp'),rsel=document.getElementById('ret-ast');
+  asel.innerHTML='<option value="">-- Select --</option>'+assets.filter(a=>a.status==='Available').map(a=>`<option value="${a.id}">${a.code} — ${a.name}</option>`).join('');
+  esel.innerHTML='<option value="">-- Select --</option>'+employees.map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+  rsel.innerHTML='<option value="">-- Select --</option>'+assets.filter(a=>a.status==='Allocated').map(a=>`<option value="${a.id}">${a.code} — ${a.name}</option>`).join('');
+}
+function doAssign(){
+  const aid=+document.getElementById('asgn-ast').value,eid=+document.getElementById('asgn-emp').value;
+  if(!aid||!eid) return toast('⚠️ Select asset and employee');
+  const a=assets.find(x=>x.id===aid),e=employees.find(x=>x.id===eid);
+  a.status='Allocated';
+  notifications.unshift({id:Date.now(),title:'Asset Assigned',msg:`${a.name} has been assigned to ${e.name}.`,read:false,time:new Date().toLocaleString('en-IN')});
+  auditLogs.unshift({id:Date.now(),table:'assets',action:'UPDATE',record:aid,old:'{"status":"Available"}',new:'{"status":"Allocated"}',by:1,time:new Date().toLocaleString('en-IN')});
+  initAssign();toast(`✅ ${a.name} assigned to ${e.name}`);
+}
+function doReturn(){
+  const aid=+document.getElementById('ret-ast').value;
+  if(!aid) return toast('⚠️ Select asset');
+  const a=assets.find(x=>x.id===aid);a.status='Available';
+  auditLogs.unshift({id:Date.now(),table:'assets',action:'UPDATE',record:aid,old:'{"status":"Allocated"}',new:'{"status":"Available"}',by:1,time:new Date().toLocaleString('en-IN')});
+  initAssign();toast(`✅ ${a.name} returned`);
+}
+function quickAssign(id){go('assign',document.getElementById('nav-assign'),'purple');setTimeout(()=>{document.getElementById('asgn-ast').value=id},100);}
+function quickReturn(id){go('assign',document.getElementById('nav-assign'),'purple');setTimeout(()=>{document.getElementById('ret-ast').value=id},100);}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+function renderNotifs(){
+  document.getElementById('notif-list').innerHTML=notifications.map(n=>`
+    <div class="notif-item ${n.read?'':'unread'}">
+      <div><div class="n-title">${n.title} ${n.read?'':' <span class="badge b-blue">NEW</span>'}</div><div class="n-msg">${n.msg}</div></div>
+      <div class="n-time">${n.time}</div>
+    </div>`).join('');
+}
+
+// ============================================
+// AUDIT TRAIL
+// ============================================
+function renderAudit(){
+  document.getElementById('audit-list').innerHTML=auditLogs.map(a=>`
+    <div class="audit-item">
+      <div class="audit-left">
+        <div class="a-table">${a.table} — Record #${a.record}</div>
+        <div class="a-detail">${a.old?`Before: ${a.old} → `:''} After: ${a.new}</div>
+      </div>
+      <div class="audit-right">
+        <span class="badge ${a.action==='UPDATE'?'b-orange':a.action==='INSERT'?'b-green':'b-red'}">${a.action}</span>
+        <div class="a-time">${a.time}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================
+// HEALTH
+// ============================================
+function initHealth(){
+  const uptime=Math.floor((Date.now()-uptimeStart)/1000);
+  document.getElementById('uptime').textContent=uptime+'s';
+  document.getElementById('health-json').textContent=JSON.stringify({
+    status:'UP',database:'Connected',
+    timestamp:new Date().toISOString(),
+    uptime:uptime+'s',environment:'development',
+    api_version:'v1'
+  },null,2);
+}
+
+// ============================================
+// TOAST
+// ============================================
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+// ============================================
+// INIT
+// ============================================
+initHome();
+</script>
+</body>
+</html>
